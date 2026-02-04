@@ -28,7 +28,7 @@ Step-3:采样 → Step-4:描述 → Step-5:标签生成
 - CUDA 11.8+ (可选，用于GPU加速)
 - 8GB+ RAM (16GB+ 推荐)
 
-### 快速安装
+### Windows 快速安装
 
 ```bash
 # 1. 克隆项目
@@ -37,10 +37,10 @@ cd semantic-cluster-webui
 
 # 2. 创建虚拟环境
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate # linux source venv/bin/activate
 
 # 3. 安装依赖
-pip install -r requirements.txt
+pip install -r requirements-cu128.txt # If use GPU
 
 # 4. Windows 下快速启动
 restart-webui.bat   # 首次运行或重启 WebUI
@@ -90,9 +90,9 @@ semantic-cluster-webui/
 
 ## 📖 文档
 
-- [todo.md](./docs/todo.md) - 开发计划与任务清单
-- [workflow-structure.md](./docs/workflow-structure.md) - 工作流详细说明
-- [numbering-system.md](./docs/numbering-system.md) - 编号系统说明
+- [docs/todo.md](./docs/todo.md) - 开发计划与任务清单
+- [docs/workflow-structure.md](./docs/workflow-structure.md) - 工作流详细说明
+- [docs/numbering-system.md](./docs/numbering-system.md) - 编号系统说明
 
 ---
 
@@ -103,15 +103,14 @@ semantic-cluster-webui/
 - **配置**: OmegaConf
 - **深度学习**: PyTorch 2.0+
 
-### 视觉模型 (可选其一)
+### 视觉模型
 - **DINOv2** (推荐) - HuggingFace facebook/dinov2-base 等，Python 3.9 兼容
-- **CLIP** - HuggingFace openai/clip-vit-base-patch16 等
 
 ### 聚类
 - HDBSCAN - 聚类算法
 - DBSCAN - 聚类算法
 
-### VLM模型 (可选其一)
+### VLM模型
 - Qwen2-VL (本地推理)
 
 ---

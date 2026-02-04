@@ -1,10 +1,55 @@
-# PyTorch with CUDA 12.8 (cu128)
+# Semantic-Cluster-WebUI - GPU 版本全套 (CUDA 12.8)
 # RTX 50 系列 (5060/5070 Ti 等 Blackwell sm_120) 必须使用 cu128
 #
-# 安装命令（关闭所有 Python 进程后执行）:
-#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+# 安装: pip install -r requirements-cu128.txt
 
+# ============================================
+# Core Dependencies
+# ============================================
+omegaconf>=2.3.0
+pyyaml>=6.0
+gradio>=4.0.0
+
+# ============================================
+# Phase-1: MVP - PyTorch GPU (CUDA 12.8)
+# ============================================
 --extra-index-url https://download.pytorch.org/whl/cu128
 torch>=2.7.0
 torchvision>=0.22.0
 torchaudio>=2.7.0
+
+# Image Processing
+pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Data Processing
+numpy>=1.24.0,<2
+pandas>=2.0.0
+numexpr>=2.8.4
+bottleneck>=1.3.6
+
+# Clustering
+hdbscan>=0.8.33
+
+# ============================================
+# Phase-2: VLM Dependencies
+# ============================================
+transformers>=4.37.0
+accelerate>=0.24.0
+sentencepiece>=0.1.99
+huggingface_hub>=0.20.0
+jinja2>=3.0
+
+# ============================================
+# Phase-5: Visualization
+# ============================================
+umap-learn>=0.5.4
+plotly>=5.17.0
+matplotlib>=3.7.0
+
+# ============================================
+# Utilities
+# ============================================
+tqdm>=4.66.0
+pathlib>=1.0.1
+loguru>=0.7.0

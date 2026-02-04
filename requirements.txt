@@ -1,5 +1,5 @@
-# Semantic-Cluster-WebUI Requirements
-# Phase-0
+# Semantic-Cluster-WebUI - CPU 版本全套
+# 安装: pip install -r requirements.txt
 
 # ============================================
 # Core Dependencies
@@ -16,7 +16,8 @@ gradio>=4.0.0
 # Phase-1: MVP Dependencies
 # ============================================
 
-# Deep Learning & Computer Vision
+# Deep Learning & Computer Vision (CPU 版本全套)
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch>=2.0.0
 torchvision>=0.15.0
 
