@@ -209,6 +209,7 @@ def run_step5(
     captions_path: Path,
     sampled_path: Path,
     output_dir: Path,
+    progress_callback=None,
 ) -> Path:
     """
     运行 Step-5: 语义蒸馏
@@ -218,6 +219,7 @@ def run_step5(
         captions_path: S4_captions.json
         sampled_path: S3_sampled_images.json
         output_dir: 输出目录
+        progress_callback: 可选，回调 (current, total) 用于 UI 进度
 
     Returns:
         S5_cluster_labels.csv 路径
@@ -249,6 +251,11 @@ def run_step5(
         if not label:
             label = _distill_placeholder(cid, captions, label_min, label_max, label_max_len)
         rows.append({"cluster_id": cid, "label": label})
+        if progress_callback:
+            try:
+                progress_callback(idx + 1, n_clusters)
+            except Exception:
+                pass
         if (idx + 1) % max(1, n_clusters // 5) == 0 or idx == n_clusters - 1:
             print(f"[Step-5] 已蒸馏 {idx + 1}/{n_clusters} 簇")
 

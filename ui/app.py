@@ -762,14 +762,50 @@ class SemanticClusterApp:
                     results.append("\n" + "=" * 60)
                     results.append("Step-5: 语义蒸馏")
                     results.append("=" * 60)
-                    labels_path, log_out = _run_captured(
-                        run_step5,
-                        config,
-                        output_dir / "S4_captions.json",
-                        sampled_path,
-                        output_dir,
-                    )
+                    results.append("Step-5: 正在蒸馏… 0/?")
+                    yield _yield()
+                    step5_queue = Queue()
+                    step5_holder = [None]
+
+                    def step5_progress(n: int, total: int):
+                        step5_queue.put(("progress", n, total))
+
+                    def step5_thread():
+                        try:
+                            buf = io.StringIO()
+                            with redirect_stdout(buf):
+                                path = run_step5(
+                                    config,
+                                    output_dir / "S4_captions.json",
+                                    sampled_path,
+                                    output_dir,
+                                    progress_callback=step5_progress,
+                                )
+                            step5_holder[0] = (path, buf.getvalue().strip(), None)
+                        except Exception as e:
+                            step5_holder[0] = (None, None, e)
+                        step5_queue.put(("done",))
+
+                    t5 = Thread(target=step5_thread)
+                    t5.start()
+                    while t5.is_alive():
+                        try:
+                            msg = step5_queue.get(timeout=0.3)
+                            if msg[0] == "done":
+                                break
+                            _, n, total = msg
+                            pct = (100 * n // total) if total else 0
+                            results[-1] = f"Step-5: 已蒸馏 {n}/{total} ({pct}%)"
+                            yield _yield()
+                        except Empty:
+                            yield _yield()
+                    t5.join()
+                    labels_path, log_out, err5 = step5_holder[0]
+                    if err5 is not None:
+                        raise err5
+                    results[-1] = "Step-5: 语义蒸馏完成"
                     if log_out:
+                        results.append("")
                         results.append(log_out)
                     results.append("✅ 簇标签完成")
                     yield _yield()
