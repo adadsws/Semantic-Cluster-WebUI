@@ -1,0 +1,82 @@
+data:
+  input_directory: data/input   # 相对路径，放入待聚类图像
+  supported_formats:
+  - jpg
+  - jpeg
+  - png
+  - webp
+  - bmp
+  - tiff
+  min_file_size_kb: 0    # 0=不进行大小过滤
+  max_file_size_mb: -1   # -1=不限制
+  exclude_folders: ''
+clustering:
+  backend: hdbscan
+  metric: euclidean
+  dbscan_metric: euclidean
+  dbscan_algorithm: auto
+  mode: fixed_eps
+  epsilon: 0.5
+  max_noise_ratio: 20
+  min_samples: 2
+  cluster_selection_method: leaf
+  min_cluster_size: 5
+  cluster_selection_epsilon: 0.0
+  cluster_selection_persistence: 0.4
+  alpha: 1.0
+vlm:
+  provider: local_qwen2vl
+  model_source: huggingface   # huggingface | modelscope（国内可用 modelscope 下载更快，见 https://www.modelscope.cn/models/qwen/Qwen2-VL-2B-Instruct/summary）
+  model_scale: small          # small=2B / large=7B / skip=跳过 Step-3/4/5，用簇序号命名
+  model_name: ''              # 留空则按 model_scale + model_source 选择；可覆盖为具体 ID
+  device: cuda
+  api_key: ''
+  torch_dtype: bfloat16
+  use_flash_attn: true
+  caption_batch_size: 4
+  max_image_size: 512    # 描述前长边最大像素，默认 512 以加速；0=不缩小
+  quantization: none
+embedding:
+  provider: dinov2
+  backbone: dinov2_vitl14
+  device: cuda
+  batch_size: 16
+  pca_components: 256
+postprocessing:
+  caption_mode: representative
+  sampling_strategy: nearest
+  top_k_sampling: 2
+  caption_prompt: 'Describe the main subject, action, lighting, and viewpoint of this
+    image in detail (around {caption_length} words).
+
+    '
+  label_prompt: ''
+  keyword_extract_prompt: 'Extract 3-8 keywords from the following description.
+    Reply with words separated by commas only. No sentences.
+
+    {description}'
+  caption_length: 50
+  label_length_min: 5
+  label_length_max: 10
+  label_keyword_max: 8
+  label_max_length: 512
+  rescue_threshold: 0.6
+  similarity_algorithm: cosine
+output:
+  dimensionality_reduction: umap
+  file_naming_rule: id@label@original   # 簇序号/簇序号@簇标签@原名
+  write_caption_txt: true
+  save_keyword_txt: true
+optimization:
+  enable_acceleration: true
+  num_workers: 4
+  thumbnail_cache: true
+  mixed_precision: true
+  model_compile: false
+  embedding_cache: true
+  prefetch_factor: 2
+system:
+  output_base_directory: data/output
+  cache_directory: data/.cache
+  log_level: INFO
+  seed: 42

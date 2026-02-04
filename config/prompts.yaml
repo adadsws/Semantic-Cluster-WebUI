@@ -1,0 +1,67 @@
+# Semantic-Cluster-WebUI - Prompt Templates
+# 📅 Last Updated: 2026-01-31 19:02
+# 📖 Reference: docs/workflow-structure.md
+
+# ============================================
+# Step-4: Image Captioning Prompts
+# ============================================
+
+caption_prompts:
+  default: |
+    Describe the main subject, action, lighting, and viewpoint of this image in detail (around {caption_length} words).
+  
+  detailed: |
+    Provide a comprehensive description of this image including:
+    - Main subject and objects
+    - Actions or activities depicted
+    - Lighting conditions and atmosphere
+    - Camera angle and composition
+    - Colors and textures
+    Target length: approximately {caption_length} words.
+  
+  concise: |
+    Briefly describe what you see in this image in {caption_length} words or less.
+  
+  artistic: |
+    Describe this image's artistic qualities, style, mood, and visual elements in around {caption_length} words.
+
+# ============================================
+# Step-5: Cluster Labeling Prompts
+# ============================================
+
+label_prompts:
+  default: |
+    Summarize the common theme of the following image descriptions in exactly {label_length_min}-{label_length_max} keywords or short phrases only. Do NOT write full sentences. Reply with words separated by commas, e.g. street, urban, people, motion. Your reply (keywords only):
+    {captions}
+  
+  category_focused: |
+    Based on these descriptions, give {label_length_min}-{label_length_max} keywords or a short category name only. No sentences. Format: word1, word2, word3. Your reply:
+    {captions}
+  
+  descriptive: |
+    Multiple images share these characteristics. Reply with {label_length_min}-{label_length_max} keywords only, comma-separated. No full sentences. Your reply (keywords only):
+    {captions}
+
+# ============================================
+# Step-6: Noise Rescue Prompts
+# ============================================
+
+rescue_prompts:
+  default: |
+    Describe this image briefly to help categorize it (around 30 words).
+  
+  detailed: |
+    Provide key visual features of this image that could help match it to a category:
+    - Main subject
+    - Setting or context
+    - Distinctive features
+    (Approximately 30 words)
+
+# ============================================
+# Prompt Variables Reference
+# ============================================
+# Available variables:
+# - {caption_length}: Integer from config
+# - {label_length_min}: Integer from config
+# - {label_length_max}: Integer from config
+# - {captions}: String (concatenated descriptions)

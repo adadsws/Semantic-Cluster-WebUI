@@ -1,0 +1,10 @@
+# PyTorch with CUDA 12.8 (cu128)
+# RTX 50 系列 (5060/5070 Ti 等 Blackwell sm_120) 必须使用 cu128
+#
+# 安装命令（关闭所有 Python 进程后执行）:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch>=2.7.0
+torchvision>=0.22.0
+torchaudio>=2.7.0
