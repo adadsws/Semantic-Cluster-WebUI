@@ -6,6 +6,8 @@
 
 基于视觉模型和 VLM 的智能图像聚类与语义标注工具。
 
+![Web UI 界面](docs/sample_ui.PNG)
+
 ---
 
 
