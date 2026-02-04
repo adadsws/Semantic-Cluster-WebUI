@@ -12,9 +12,9 @@
 ## 🎯 工作流程
 
 ```
-输入图像 → Step-0:索引 → Step-1:嵌入 → Step-2:聚类 
-         ↓
-Step-3:采样 → Step-4:描述 → Step-5:标签生成
+输入图像 
+→ Step-0:索引 → Step-1:嵌入 → Step-2:聚类 
+→ Step-3:采样 → Step-4:描述 → Step-5:标签生成
 
 ```
 
@@ -37,7 +37,7 @@ cd semantic-cluster-webui
 
 # 2. 创建虚拟环境
 python -m venv venv
-venv\Scripts\activate # linux source venv/bin/activate
+venv\Scripts\activate # linux: source venv/bin/activate
 
 # 3. 安装依赖
 pip install -r requirements-cu128.txt # If use GPU
