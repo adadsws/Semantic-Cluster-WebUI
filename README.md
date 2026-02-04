@@ -32,7 +32,7 @@ Step-3:采样 → Step-4:描述 → Step-5:标签生成
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourusername/semantic-cluster-webui.git
+git clone https://github.com/adadsws/Semantic-Cluster-WebUI.git
 cd semantic-cluster-webui
 
 # 2. 创建虚拟环境
