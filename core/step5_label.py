@@ -64,23 +64,25 @@ def _distill_placeholder(
     label_length_min: int,
     label_length_max: int,
     label_max_length: int = 512,
+    cluster_id_width: int = 2,
 ) -> str:
-    """无 LLM 时：从首条描述截取前 N 词；若为占位描述则直接返回 Cluster_N。"""
+    """无 LLM 时：从首条描述截取前 N 词；若为占位描述则直接返回 Cluster_N。簇序号位数与最大簇数一致。"""
+    fmt = f"Cluster_{{:0{cluster_id_width}d}}"
     if not captions:
-        return f"Cluster_{cluster_id:02d}"
+        return fmt.format(cluster_id)
     first = captions[0].strip()
     if _is_placeholder_caption(first):
-        return f"Cluster_{cluster_id:02d}"
+        return fmt.format(cluster_id)
     # 去掉 [Placeholder] 等前缀
     if first.startswith("["):
         idx = first.find("]")
         if idx >= 0:
             first = first[idx + 1 :].strip()
     if _is_placeholder_caption(first):
-        return f"Cluster_{cluster_id:02d}"
+        return fmt.format(cluster_id)
     words = first.split()
     n = min(label_length_max, max(label_length_min, len(words)))
-    label = " ".join(words[:n]) if words else f"Cluster_{cluster_id:02d}"
+    label = " ".join(words[:n]) if words else fmt.format(cluster_id)
     return _sanitize_label(label, max_length=label_max_length)
 
 
@@ -117,6 +119,7 @@ def _distill_with_llm(
     captions: List[str],
     config: dict,
     output_dir: Optional[Path] = None,
+    cluster_id_width: int = 2,
 ) -> str:
     """先对每条描述提取关键词，再合并同簇关键词作为簇标签；失败则走占位逻辑。"""
     post = config.get("postprocessing", {})
@@ -125,7 +128,7 @@ def _distill_with_llm(
     label_max_len = int(post.get("label_max_length", 512))
     label_keyword_max = max(1, int(post.get("label_keyword_max", 8)))
     if not captions:
-        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len)
+        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len, cluster_id_width)
     import sys
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
@@ -137,9 +140,9 @@ def _distill_with_llm(
         )
     except ImportError as e:
         print(f"[Step-5] 导入 VLM 模块失败: {e}")
-        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len)
+        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len, cluster_id_width)
     if not is_vlm_available():
-        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len)
+        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len, cluster_id_width)
     # 单条描述关键词提取 prompt，占位符 {description}；无则用默认
     kw_tpl = (post.get("keyword_extract_prompt") or "").strip()
     if not kw_tpl or "{description}" not in kw_tpl:
@@ -153,7 +156,7 @@ def _distill_with_llm(
         if (c or "").strip() and not _is_placeholder_caption((c or "").strip())
     ]
     if not valid_captions:
-        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len)
+        return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len, cluster_id_width)
     vlm_cfg = config.get("vlm", {})
     try:
         from models.vlm_models import resolve_vlm_model_name
@@ -188,7 +191,7 @@ def _distill_with_llm(
         if output_dir and config.get("output", {}).get("save_keyword_txt", True) and keyword_strs:
             kw_dir = output_dir / "step5_keywords"
             kw_dir.mkdir(parents=True, exist_ok=True)
-            fname = "noise_keywords.txt" if cluster_id == -1 else f"cluster_{cluster_id:02d}_keywords.txt"
+            fname = "noise_keywords.txt" if cluster_id == -1 else f"cluster_{cluster_id:0{cluster_id_width}d}_keywords.txt"
             kw_path = kw_dir / fname
             lines = [f"{kw}\n" for kw in keyword_strs]
             try:
@@ -201,7 +204,7 @@ def _distill_with_llm(
             return _sanitize_label(merged, max_length=label_max_len)
     except Exception as e:
         print(f"[Step-5] 簇 {cluster_id} LLM 蒸馏失败: {e}")
-    return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len)
+    return _distill_placeholder(cluster_id, captions, label_min, label_max, label_max_len, cluster_id_width)
 
 
 def run_step5(
@@ -238,7 +241,10 @@ def run_step5(
     label_min = int(post.get("label_length_min", 5))
     label_max = int(post.get("label_length_max", 10))
     label_max_len = int(post.get("label_max_length", 512))
-    print(f"[Step-5] 共 {n_clusters} 个簇待蒸馏标签（label_length: {label_min}-{label_max} 词，最大 {label_max_len} 字符）")
+    # 簇序号宽度：与最大簇 ID 位数一致（至少 2 位），与 Step-8 一致
+    non_noise_ids = [int(k) for k in sampled.keys() if int(k) >= 0]
+    cluster_id_width = max(2, len(str(max(non_noise_ids)))) if non_noise_ids else 2
+    print(f"[Step-5] 共 {n_clusters} 个簇待蒸馏标签（label_length: {label_min}-{label_max} 词，最大 {label_max_len} 字符，簇序号宽度 {cluster_id_width}）")
     rows = []
     for idx, (cid_str, image_ids) in enumerate(sampled.items()):
         cid = int(cid_str)
@@ -247,9 +253,9 @@ def run_step5(
             for iid in image_ids
             if captions_by_image.get(iid, "").strip()
         ]
-        label = _distill_with_llm(cid, captions, config, output_dir=output_dir)
+        label = _distill_with_llm(cid, captions, config, output_dir=output_dir, cluster_id_width=cluster_id_width)
         if not label:
-            label = _distill_placeholder(cid, captions, label_min, label_max, label_max_len)
+            label = _distill_placeholder(cid, captions, label_min, label_max, label_max_len, cluster_id_width)
         rows.append({"cluster_id": cid, "label": label})
         if progress_callback:
             try:

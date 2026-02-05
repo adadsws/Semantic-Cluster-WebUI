@@ -44,25 +44,27 @@ class FileOrganizer:
         self,
         cluster_id: int,
         cluster_label: str,
-        original_filename: str
+        original_filename: str,
+        cluster_id_width: int = 2,
     ) -> str:
         """
         根据命名规则生成新文件名
-        
+
         Args:
             cluster_id: 簇ID
             cluster_label: 簇标签（语义标签，Phase-2才有）
             original_filename: 原始文件名
-            
+            cluster_id_width: 簇序号格式化宽度（与最大簇数一致，如 100+ 簇用 3）
+
         Returns:
             新文件名
         """
         # 获取原始文件名和扩展名
         original_stem = Path(original_filename).stem
         original_ext = Path(original_filename).suffix
-        
-        # 簇ID格式化为两位数
-        cluster_str = f"{cluster_id:02d}" if cluster_id >= 0 else "noise"
+
+        # 簇ID格式化为统一位数（与最大簇数一致）
+        cluster_str = f"{cluster_id:0{cluster_id_width}d}" if cluster_id >= 0 else "noise"
         
         # 根据命名规则生成
         if self.naming_rule == "id@label@original":
@@ -126,11 +128,15 @@ class FileOrganizer:
         print(f"[Step-8] Organizing files to: {output_base_dir}")
         print(f"[Step-8] Naming rule: {self.naming_rule}")
         print(f"[Step-8] Dry run: {dry_run}")
-        
+
+        # 簇序号宽度：与最大簇 ID 位数一致（至少 2 位）
+        non_noise = [int(c) for c in clustering['cluster_id'].unique() if int(c) >= 0]
+        cluster_id_width = max(2, len(str(max(non_noise)))) if non_noise else 2
+
         # 创建输出目录
         if not dry_run:
             output_base_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # 整理日志
         log = {
             'moved': [],
@@ -138,15 +144,15 @@ class FileOrganizer:
             'errors': [],
             'conflicts': []
         }
-        
+
         # 按簇整理
         for cluster_id in tqdm(sorted(clustering['cluster_id'].unique()), desc="Organizing clusters"):
             # 获取该簇的所有图像
             cluster_images = clustering[clustering['cluster_id'] == cluster_id]
-            
-            # 文件夹名：id@label@original 时为簇序号（00/01/noise），否则有语义标签用 label，无则 cluster_00 / noise
+
+            # 文件夹名：id@label@original 时为簇序号（统一位数），否则有语义标签用 label，无则 cluster_00 / noise
             label = (cluster_labels or {}).get(int(cluster_id), "")
-            cluster_str = f"{cluster_id:02d}" if cluster_id >= 0 else "noise"
+            cluster_str = f"{cluster_id:0{cluster_id_width}d}" if cluster_id >= 0 else "noise"
             if self.naming_rule == "id@label@original":
                 cluster_dir = output_base_dir / cluster_str
             elif cluster_id == -1:
@@ -155,7 +161,7 @@ class FileOrganizer:
                 safe_label = _sanitize_dirname(label)
                 cluster_dir = output_base_dir / safe_label
             else:
-                cluster_dir = output_base_dir / f"cluster_{cluster_id:02d}"
+                cluster_dir = output_base_dir / f"cluster_{cluster_id:0{cluster_id_width}d}"
             
             if not dry_run:
                 cluster_dir.mkdir(parents=True, exist_ok=True)
@@ -186,7 +192,8 @@ class FileOrganizer:
                 new_filename = self.generate_filename(
                     cluster_id=cluster_id,
                     cluster_label=label,
-                    original_filename=original_path.name
+                    original_filename=original_path.name,
+                    cluster_id_width=cluster_id_width,
                 )
                 
                 new_path = cluster_dir / new_filename
